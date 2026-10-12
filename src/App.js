@@ -86,27 +86,34 @@ const App = () => {
               <Route
                 path="/*"
                 element={
-                  <div className="flex min-h-screen overflow-hidden bg-gray-50">
+                  <div className="min-h-screen bg-gray-50">
                     <Sidebar
                       isOpen={isSidebarOpen}
                       setIsOpen={setIsSidebarOpen}
                     />
+
                     <main
-                      className={`transition-all duration-300 overflow-x-hidden py-8
-                      w-full
-                      max-w-none
-                      
-    sm:px-6         /* tablet */
-    lg:px-6         /* laptop */
-    xl:px-4        /* desktop */
-    2xl:px-6       /* layar besar */
-       /* ruang icon sidebar di HP & tablet */
-    pl-[5rem] sm:pl-[6.5rem] lg:pl-0
-${
-  isSidebarOpen
-    ? "lg:ml-[16rem] lg:w-[calc(100%-16rem)]"
-    : "lg:ml-[5.5rem] lg:w-[calc(100%-5.5rem)]"
-}`}
+                      className={`
+      min-h-screen
+      min-w-0
+      overflow-x-hidden
+      py-8
+      transition-all
+      duration-300
+
+      px-4
+      sm:px-5
+      md:px-6
+      lg:px-6
+      xl:px-5
+      2xl:px-6
+
+      ${
+        isSidebarOpen
+          ? "lg:ml-[20rem] lg:w-[calc(100%-20rem)]"
+          : "lg:ml-[6.5rem] lg:w-[calc(100%-6.5rem)]"
+      }
+    `}
                     >
                       <Routes>
                         <Route path="/overview" element={<Overview />} />

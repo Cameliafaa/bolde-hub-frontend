@@ -1,0 +1,61 @@
+:root {
+  /* ===============================
+     BOLDE HUB BRAND
+  =============================== */
+
+  --color-primary: #df0067;
+  --color-primary-hover: #c5005b;
+  --color-primary-soft: #fff0f6;
+
+  --color-secondary: #8f0046;
+  --color-secondary-hover: #750039;
+
+  --color-accent: #ff4f9a;
+
+  /* ===============================
+     TEXT
+  =============================== */
+
+  --color-text-primary: #171717;
+  --color-text-secondary: #667085;
+  --color-text-muted: #98a2b3;
+
+  /* ===============================
+     BACKGROUND
+  =============================== */
+
+  --color-background: #f8f8f9;
+  --color-surface: #ffffff;
+
+  /* ===============================
+     BORDER
+  =============================== */
+
+  --color-border: #e5e7eb;
+  --color-border-focus: var(--color-primary);
+
+  /* ===============================
+     STATUS
+  =============================== */
+
+  --color-success: #22c55e;
+  --color-warning: #f5c542;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
+
+  /* ===============================
+     SIDEBAR
+  =============================== */
+
+  --sidebar-main: #000000;
+  --sidebar-secondary: #dedede;
+
+  /* ===============================
+     RADIUS
+  =============================== */
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+}

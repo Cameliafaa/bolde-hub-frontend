@@ -1,43 +1,98 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronRight, ArrowLeft } from "lucide-react";
-import logoFull from "../assets/images/logo.png";
-import logoMini from "../assets/images/logo-only.png";
+import {
+  ChevronDown,
+  Home,
+  MessageCircleMore,
+  BriefcaseBusiness,
+  UserRound,
+} from "lucide-react";
+
 import { ApiRequest } from "../services/apiRequest";
+import boldeHubLogo from "../assets/images/logo-2.png";
+
+const WORKSPACES = [
+  {
+    id: "big",
+    code: "BW",
+    name: "BIG WorkSpace",
+  },
+  {
+    id: "bmi",
+    code: "BMI",
+    name: "BMI WorkSpace",
+  },
+];
+
+const MAIN_MODULES = [
+  {
+    id: "home",
+    name: "Home",
+    icon: Home,
+  },
+  {
+    id: "communication",
+    name: "Communication",
+    icon: MessageCircleMore,
+  },
+  {
+    id: "work",
+    name: "Work",
+    icon: BriefcaseBusiness,
+  },
+];
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+
+  const workspaceRef = useRef(null);
+
   const [profile, setProfile] = useState(null);
   const [menus, setMenus] = useState([]);
-  const [activeParent, setActiveParent] = useState(null);
+  const [activeModule, setActiveModule] = useState("home");
 
-  // ===== Helper mapping menu dari access =====
-  const mapMenus = (access) => {
+  const [selectedWorkspace, setSelectedWorkspace] = useState(WORKSPACES[0]);
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
+
+  const [expandedMenus, setExpandedMenus] = useState({});
+
+  // =========================================================
+  // MAP MENU API
+  // =========================================================
+
+  const mapMenus = (access = []) => {
     const mapped = access
-      .filter((m) => m.is_active && m.permissions?.can_read)
-      .map((m) => ({
-        id: m.menu_id,
-        name: m.menu_name,
-        icon: m.icon,
-        path: m.url,
-        order_no: m.order_no,
-        subMenus: (m.sub_menus || [])
-          .filter((sm) => sm.is_active && sm.permissions?.can_read)
-          .map((sm) => ({
-            id: sm.id,
-            name: sm.name,
-            icon: sm.icon,
-            path: sm.url,
-            order_no: sm.order_no,
-          })),
+      .filter((menu) => menu.is_active && menu.permissions?.can_read)
+      .map((menu) => ({
+        id: menu.menu_id,
+        name: menu.menu_name,
+        icon: menu.icon,
+        path: menu.url,
+        order_no: menu.order_no,
+
+        subMenus: (menu.sub_menus || [])
+          .filter(
+            (subMenu) => subMenu.is_active && subMenu.permissions?.can_read,
+          )
+          .map((subMenu) => ({
+            id: subMenu.id,
+            name: subMenu.name,
+            icon: subMenu.icon,
+            path: subMenu.url,
+            order_no: subMenu.order_no,
+          }))
+          .sort((a, b) => (a.order_no || 0) - (b.order_no || 0)),
       }))
-      .sort((a, b) => a.order_no - b.order_no);
+      .sort((a, b) => (a.order_no || 0) - (b.order_no || 0));
 
     setMenus(mapped);
   };
 
-  // ===== Refresh menu dari backend (/users/refresh-menu) =====
+  // =========================================================
+  // REFRESH MENU
+  // =========================================================
+
   useEffect(() => {
     const refreshMenus = async () => {
       try {
@@ -46,231 +101,269 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           method: "GET",
         });
 
-        const access = res.data.user.role.access || [];
+        const access = res?.data?.user?.role?.access || [];
 
-        // simpan ke localStorage untuk dipakai halaman lain
         const stored = JSON.parse(localStorage.getItem("user")) || {};
+
         stored.role = stored.role || {};
         stored.role.access = access;
+
         localStorage.setItem("user", JSON.stringify(stored));
 
-        // Hapus duplikat berdasarkan menu_id
         const uniqueAccess = Object.values(
           access.reduce((acc, item) => {
             acc[item.menu_id] = acc[item.menu_id] || item;
+
             return acc;
           }, {}),
         );
 
         mapMenus(uniqueAccess);
-      } catch (err) {
-        console.error("Gagal refresh menu:", err);
+      } catch (error) {
+        console.error("Gagal refresh menu:", error);
       }
     };
 
     refreshMenus();
   }, []);
 
-  // ===== Responsif open/close sidebar =====
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 1024) setIsOpen(false);
-      else setIsOpen(true);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [setIsOpen]);
+  // =========================================================
+  // FALLBACK MENU LOCAL STORAGE
+  // =========================================================
 
-  // ===== Ambil menu awal dari localStorage (fallback) =====
   useEffect(() => {
     try {
       const storedUser = localStorage.getItem("user");
+
       if (!storedUser) return;
 
       const user = JSON.parse(storedUser);
+
       const access = user?.role?.access || [];
+
       if (!access.length) return;
 
-      // Hapus duplikat berdasarkan menu_id
       const uniqueAccess = Object.values(
         access.reduce((acc, item) => {
           acc[item.menu_id] = acc[item.menu_id] || item;
+
           return acc;
         }, {}),
       );
 
       mapMenus(uniqueAccess);
-    } catch (err) {
-      console.error("Gagal parsing menu dari login:", err);
+    } catch (error) {
+      console.error("Gagal parsing menu:", error);
     }
   }, []);
 
-  // ===== Ambil profil =====
+  // =========================================================
+  // PROFILE
+  // =========================================================
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await ApiRequest({ url: "/profile/me", method: "GET" });
-        if (res.status === "success") setProfile(res.data);
-      } catch (err) {
-        console.error("Gagal ambil profile:", err);
+        const res = await ApiRequest({
+          url: "/profile/me",
+          method: "GET",
+        });
+
+        if (res.status === "success") {
+          setProfile(res.data);
+        }
+      } catch (error) {
+        console.error("Gagal ambil profile:", error);
       }
     };
+
     fetchProfile();
   }, []);
 
+  // =========================================================
+  // CLOSE WORKSPACE DROPDOWN SAAT KLIK LUAR
+  // =========================================================
+
+  useEffect(() => {
+    const handleOutside = (event) => {
+      if (
+        workspaceRef.current &&
+        !workspaceRef.current.contains(event.target)
+      ) {
+        setWorkspaceOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+    };
+  }, []);
+
+  // =========================================================
+  // RESPONSIVE
+  // =========================================================
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setIsOpen(false);
+      }
+    };
+
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, [setIsOpen]);
+
+  // =========================================================
+  // INITIAL USER
+  // =========================================================
+
   const getInitials = (name = "") => {
     if (!name) return "U";
+
     const words = name.trim().split(" ");
-    if (words.length === 1) return words[0][0].toUpperCase();
+
+    if (words.length === 1) {
+      return words[0][0].toUpperCase();
+    }
+
     return (words[0][0] + words[1][0]).toUpperCase();
   };
 
-  // ===== Panel Submenu (DESIGN SAMA PERSIS DENGAN MENU UTAMA) =====
-  if (activeParent) {
-    const parentMenu = menus.find((m) => m.name === activeParent);
+  // =========================================================
+  // ACTIVE MENU
+  // =========================================================
 
-    return (
-      <aside
-        className={`fixed top-0 left-0 z-40 ${
-          isOpen ? "w-64" : "w-20"
-        } bg-white shadow-md flex flex-col justify-between h-screen rounded-r-2xl transition-all duration-300 ease-in-out overflow-y-auto`}
-      >
-        <div>
-          {/* Tombol kembali */}
-          <button
-            onClick={() => setActiveParent(null)}
-            title="Kembali ke menu"
-            className={`flex items-center gap-2 pt-6 text-sm text-gray-500 hover:text-[#0F4C81] transition
-    ${isOpen ? "px-6 justify-start" : "px-0 justify-center w-full"}`}
-          >
-            <ArrowLeft size={16} />
-            {isOpen && "Kembali ke menu"}
-          </button>
-          {/* SUBMENU LIST */}
-          <nav className="mt-6 space-y-1">
-            {parentMenu?.subMenus?.map((item) => {
-              const active = pathname.startsWith(item.path);
+  const isMenuActive = (item) => {
+    if (item.path && pathname === item.path) {
+      return true;
+    }
 
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => navigate(item.path)}
-                  className={`flex items-center cursor-pointer ${
-                    isOpen ? "justify-between px-4" : "justify-center"
-                  } mx-3 py-3 rounded-lg transition-all ${
-                    active
-                      ? "bg-gradient-to-r from-[#2D9CDB] to-[#0F4C81] text-white shadow-sm"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {item.icon ? (
-                      <img
-                        src={item.icon}
-                        alt={item.name}
-                        className={`w-5 h-5 object-contain transition ${
-                          active ? "filter brightness-0 invert" : ""
-                        }`}
-                        onError={(e) =>
-                          (e.currentTarget.src = "/fallback-icon.png")
-                        }
-                      />
-                    ) : (
-                      <div className="w-5 h-5 bg-gray-300 rounded" />
-                    )}
+    return item.subMenus?.some((sub) => sub.path && pathname === sub.path);
+  };
 
-                    {isOpen && (
-                      <span className="text-sm font-medium">{item.name}</span>
-                    )}
-                  </div>
+  // =========================================================
+  // AUTO OPEN ACTIVE PARENT
+  // =========================================================
 
-                  {isOpen && (
-                    <ChevronRight
-                      size={16}
-                      className={`text-gray-400 ${active && "text-white"}`}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </nav>
-        </div>
+  useEffect(() => {
+    if (!menus.length) return;
 
-        {/* Footer Sidebar */}
-        <div
-          className={`p-6 transition-all ${
-            !isOpen && "px-0 flex flex-col items-center"
-          }`}
-        >
-          {isOpen ? (
-            <>
-              {/* <div className="p-5 text-center text-white shadow-md bg-gradient-to-r from-[#2D9CDB] to-[#0F4C81] rounded-2xl">
-              <p className="mb-3 text-sm font-semibold leading-tight">
-                Dapatkan informasi terbaru sekarang juga
-              </p>
-              <button className="px-6 py-2 text-sm font-bold transition bg-white rounded-full shadow text-[#0F4C81] hover:shadow-md">
-                Subscribe Now
-              </button>
-            </div> */}
-
-              <div
-                onClick={() => navigate("/profile")}
-                className="flex items-center gap-3 mt-6 cursor-pointer"
-              >
-                {profile?.image_url ? (
-                  <img
-                    src={profile.image_url}
-                    alt="User"
-                    className="object-cover w-10 h-10 rounded-full"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center w-10 h-10 text-sm font-semibold text-white rounded-full bg-[#2D9CDB]">
-                    {getInitials(profile?.full_name)}
-                  </div>
-                )}
-
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">
-                    {profile?.full_name || "User"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {profile?.positions?.name || "Staff"}
-                  </p>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              {profile?.image_url ? (
-                <img
-                  src={profile.image_url}
-                  alt="User"
-                  className="object-cover w-10 h-10 rounded-full"
-                />
-              ) : (
-                <div className="flex items-center justify-center w-10 h-10 text-sm font-semibold text-white rounded-full bg-[#2D9CDB]">
-                  {getInitials(profile?.full_name)}
-                </div>
-              )}
-
-              {/* <button
-                className="px-3 py-1 mt-3 text-xs font-semibold text-white rounded-full bg-gradient-to-r from-[#2D9CDB] to-[#0F4C81]"
-                onClick={() => alert("Subscribe feature coming soon!")}
-              >
-                +
-              </button> */}
-            </>
-          )}
-        </div>
-      </aside>
+    const activeParent = menus.find((item) =>
+      item.subMenus?.some((sub) => sub.path && pathname === sub.path),
     );
-  }
 
-  // ===== Sidebar utama =====
+    if (activeParent) {
+      setExpandedMenus((prev) => ({
+        ...prev,
+        [activeParent.id]: true,
+      }));
+    }
+  }, [pathname, menus]);
+
+  // =========================================================
+  // CLICK PARENT
+  // =========================================================
+
+  const MENU_TOGGLE_ONLY = ["Master Data", "User Management"];
+  const MENU_NO_DROPDOWN = ["Sales Tools KIT"];
+
+  const handleMenuClick = (item) => {
+    const hasSubmenu = item.subMenus?.length > 0;
+
+    // =====================================================
+    // SALES TOOLS KIT
+    // Tidak tampil dropdown submenu.
+    // Langsung buka halaman parent.
+    // =====================================================
+    if (MENU_NO_DROPDOWN.includes(item.name)) {
+      if (item.path) {
+        navigate(item.path);
+      }
+
+      if (window.innerWidth < 1024) {
+        setIsOpen(false);
+      }
+
+      return;
+    }
+
+    // =====================================================
+    // MASTER DATA & USER MANAGEMENT
+    // Hanya expand / collapse.
+    // JANGAN berpindah halaman.
+    // =====================================================
+    if (MENU_TOGGLE_ONLY.includes(item.name) && hasSubmenu) {
+      setExpandedMenus((prev) => ({
+        ...prev,
+        [item.id]: !prev[item.id],
+      }));
+
+      return;
+    }
+
+    // =====================================================
+    // PARENT LAIN YANG PUNYA SUBMENU
+    // =====================================================
+    if (hasSubmenu) {
+      setExpandedMenus((prev) => ({
+        ...prev,
+        [item.id]: !prev[item.id],
+      }));
+
+      if (item.path) {
+        navigate(item.path);
+      }
+
+      return;
+    }
+
+    // =====================================================
+    // MENU TANPA SUBMENU
+    // =====================================================
+    if (item.path) {
+      navigate(item.path);
+    }
+
+    if (window.innerWidth < 1024) {
+      setIsOpen(false);
+    }
+  };
+
+  // =========================================================
+  // CLICK SUBMENU
+  // =========================================================
+
+  const handleSubMenuClick = (sub) => {
+    if (!sub.path) return;
+
+    navigate(sub.path);
+
+    if (window.innerWidth < 1024) {
+      setIsOpen(false);
+    }
+  };
+
+  // =========================================================
+  // CLICK MAIN MODULE
+  // =========================================================
+
+  const handleModuleClick = (moduleId) => {
+    setActiveModule(moduleId);
+
+    if (!isOpen) {
+      setIsOpen(true);
+    }
+  };
+
   return (
     <>
-      {/* BACKDROP – hanya HP & Tablet */}
+      {/* MOBILE BACKDROP */}
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
@@ -278,167 +371,399 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         />
       )}
 
+      {/* SIDEBAR */}
       <aside
-        className={`fixed top-0 left-0 z-40 ${
-          isOpen ? "w-64" : "w-20"
-        } bg-white shadow-md flex flex-col justify-between h-screen rounded-r-2xl transition-all duration-300 ease-in-out overflow-y-auto`}
+        className={`
+        fixed
+        left-0
+        top-0
+        z-40
+        h-screen
+        bg-[#f6f6f6]
+        transition-all
+        duration-300
+
+        ${
+          isOpen
+            ? "w-[20rem] translate-x-0"
+            : "-translate-x-full lg:w-[6.5rem] lg:translate-x-0"
+        }
+      `}
       >
-        <div>
-          {/* Logo */}
+        <div className="flex flex-col h-full px-4 py-5">
+          {/* =================================================
+    TOP SECTION
+================================================= */}
+
           <div
-            onClick={() => setIsOpen(!isOpen)}
-            className="relative flex items-center justify-center p-6 overflow-hidden cursor-pointer"
+            className={`
+    mb-3
+    flex
+    ${isOpen ? "items-center gap-3" : "justify-center"}
+  `}
           >
-            <div className="relative flex items-center justify-center w-44 h-14">
+            {/* LOGO BOLDE HUB */}
+            <button
+              type="button"
+              onClick={() => {
+                setWorkspaceOpen(false);
+                setIsOpen((prev) => !prev);
+              }}
+              title={isOpen ? "Tutup sidebar" : "Buka sidebar"}
+              className={`
+      flex
+      shrink-0
+      items-center
+      justify-center
+      bg-transparent
+      transition-all
+      duration-300
+
+      ${isOpen ? "h-[40px] w-[40px]" : "h-12 w-12"}
+    `}
+            >
               <img
-                src={logoFull}
-                alt="Logo Full"
-                className={`absolute transition-opacity duration-300 ease-in-out ${
-                  isOpen ? "opacity-100" : "opacity-0"
-                }`}
-                style={{ width: "11rem", height: "auto" }}
+                src={boldeHubLogo}
+                alt="BOLDe Hub"
+                className={`
+        object-contain
+        transition-all
+        duration-300
+
+        ${isOpen ? "h-9 w-9" : "h-8 w-8"}
+      `}
               />
-              <img
-                src={logoMini}
-                alt="Logo Mini"
-                className={`absolute transition-opacity duration-300 ease-in-out ${
-                  isOpen ? "opacity-0" : "opacity-100"
-                }`}
-                style={{ width: "2.5rem", height: "auto" }}
-              />
-            </div>
-          </div>
+            </button>
 
-          {/* Menu List */}
-          <nav className="mt-4 space-y-1">
-            {menus.map((item) => {
-              const active = pathname.startsWith(item.path);
-              const hasSubmenu = item.subMenus?.length > 0;
-              const isSalesTools = item.name === "Sales Tools KIT";
+            {/* WORKSPACE - HANYA TAMPIL SAAT SIDEBAR OPEN */}
+            {isOpen && (
+              <div ref={workspaceRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWorkspaceOpen((prev) => !prev);
+                  }}
+                  className="flex items-center px-5 text-left transition h-[50px] w-[190px] rounded-2xl bg-[#dedede] hover:bg-[#d5d5d5]"
+                >
+                  <span className="flex-1 min-w-0 text-base font-semibold truncate text-[#1e293b]">
+                    {selectedWorkspace.name}
+                  </span>
 
-              return (
-                <div key={item.id}>
-                  <div
-                    onClick={() => {
-                      if (isSalesTools) {
-                        navigate("/sales-tools");
-                        return;
-                      }
-                      if (hasSubmenu) {
-                        setActiveParent(item.name); // buka panel submenu
-                      } else {
-                        navigate(item.path);
-                      }
-                    }}
-                    className={`flex items-center cursor-pointer ${
-                      isOpen ? "justify-between px-4" : "justify-center"
-                    } mx-3 py-3 rounded-lg transition-all ${
-                      active
-                        ? "bg-gradient-to-r from-[#2D9CDB] to-[#0F4C81] text-white shadow-sm"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {item.icon ? (
-                        <img
-                          src={item.icon}
-                          alt={item.name}
-                          className={`w-5 h-5 object-contain transition ${
-                            active ? "filter brightness-0 invert" : ""
-                          }`}
-                          onError={(e) =>
-                            (e.currentTarget.src = "/fallback-icon.png")
-                          }
-                        />
-                      ) : (
-                        <div className="w-5 h-5 bg-gray-300 rounded" />
-                      )}
-                      {isOpen && (
-                        <span className="text-sm font-medium">{item.name}</span>
-                      )}
-                    </div>
+                  <ChevronDown
+                    size={20}
+                    className={`
+            shrink-0
+            transition-transform
+            duration-200
+            ${workspaceOpen ? "rotate-180" : ""}
+          `}
+                  />
+                </button>
 
-                    {isOpen && hasSubmenu && !isSalesTools && (
-                      <ChevronRight
-                        size={16}
-                        className={`text-gray-400 ${active && "text-white"}`}
-                      />
-                    )}
+                {/* WORKSPACE DROPDOWN */}
+                {workspaceOpen && (
+                  <div className="absolute left-0 z-50 p-2 overflow-hidden bg-white border border-gray-200 shadow-xl top-[58px] w-[190px] rounded-2xl">
+                    {WORKSPACES.map((workspace) => {
+                      const selected = workspace.id === selectedWorkspace.id;
+
+                      return (
+                        <button
+                          type="button"
+                          key={workspace.id}
+                          onClick={() => {
+                            setSelectedWorkspace(workspace);
+                            setWorkspaceOpen(false);
+                          }}
+                          className={`
+                  flex
+                  w-full
+                  items-center
+                  rounded-xl
+                  px-3
+                  py-2.5
+                  text-left
+                  transition
+
+                  ${selected ? "bg-brand-soft" : "hover:bg-gray-100"}
+                `}
+                        >
+                          <span
+                            className={`
+                    text-sm
+                    ${
+                      selected
+                        ? "font-semibold text-brand-primary"
+                        : "text-gray-700"
+                    }
+                  `}
+                          >
+                            {workspace.name}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
-              );
-            })}
-          </nav>
-        </div>
+                )}
+              </div>
+            )}
+          </div>
+          {/* =================================================
+            NAVIGATION BODY
+        ================================================= */}
 
-        {/* Footer Sidebar */}
-        <div
-          className={`p-6 transition-all ${
-            !isOpen && "px-0 flex flex-col items-center"
-          }`}
-        >
-          {isOpen ? (
-            <>
-              {/* <div className="p-5 text-center text-white shadow-md bg-gradient-to-r from-[#2D9CDB] to-[#0F4C81] rounded-2xl">
-              <p className="mb-3 text-sm font-semibold leading-tight">
-                Dapatkan informasi terbaru sekarang juga
-              </p>
-              <button className="px-6 py-2 text-sm font-bold transition bg-white rounded-full shadow text-[#0F4C81] hover:shadow-md">
-                Subscribe Now
-              </button>
-            </div> */}
+          <div className="flex flex-1 min-h-0 gap-2 mt-3">
+            {/* ===============================================
+              BLACK MAIN MODULE RAIL
+          =============================================== */}
 
-              <div
+            <div className="relative flex flex-col items-center py-5 bg-black w-[72px] shrink-0 rounded-t-xl">
+              {/* MAIN MODULES */}
+              <div className="flex flex-col flex-1 gap-5">
+                {MAIN_MODULES.map((module) => {
+                  const Icon = module.icon;
+                  const active = activeModule === module.id;
+
+                  return (
+                    <button
+                      type="button"
+                      key={module.id}
+                      title={module.name}
+                      onClick={() => handleModuleClick(module.id)}
+                      className={`
+                      flex
+                      h-10
+                      w-10
+                      items-center
+                      justify-center
+                      rounded-xl
+                      transition-all
+                      duration-200
+
+                      ${
+                        active
+                          ? "bg-white text-brand-primary"
+                          : "text-white hover:bg-white/10"
+                      }
+                    `}
+                    >
+                      <Icon size={19} strokeWidth={1.8} />
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* PROFILE */}
+              <button
+                type="button"
                 onClick={() => navigate("/profile")}
-                className="flex items-center gap-3 mt-6 cursor-pointer"
+                className="flex items-center justify-center w-10 h-10 mt-auto overflow-hidden bg-gray-700 border-2 rounded-full border-white/30"
               >
                 {profile?.image_url ? (
                   <img
                     src={profile.image_url}
                     alt="User"
-                    className="object-cover w-10 h-10 rounded-full"
+                    className="object-cover w-full h-full"
                   />
+                ) : profile?.full_name ? (
+                  <span className="font-bold text-white text-[10px]">
+                    {getInitials(profile.full_name)}
+                  </span>
                 ) : (
-                  <div className="flex items-center justify-center w-10 h-10 text-sm font-semibold text-white rounded-full bg-[#2D9CDB]">
-                    {getInitials(profile?.full_name)}
-                  </div>
+                  <UserRound size={17} className="text-white" />
                 )}
+              </button>
+            </div>
 
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">
-                    {profile?.full_name || "User"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {profile?.positions?.name || "Staff"}
-                  </p>
-                </div>
-              </div>
-            </>
-          ) : (
+            {/* ===============================================
+              SECONDARY MENU
+          =============================================== */}
+
             <div
-              onClick={() => navigate("/profile")}
-              className="flex items-center gap-3 mt-6 cursor-pointer"
+              className={`
+              bg-[#dedede]
+              transition-all
+              duration-300
+
+              ${
+                isOpen
+                  ? "w-[195px] overflow-y-auto px-3 py-7 opacity-100"
+                  : "w-0 overflow-hidden px-0 py-7 opacity-0"
+              }
+            `}
             >
-              {profile?.image_url ? (
-                <img
-                  src={profile.image_url}
-                  alt="User"
-                  className="object-cover w-10 h-10 rounded-full"
-                />
-              ) : (
-                <div className="flex items-center justify-center w-10 h-10 text-sm font-semibold text-white rounded-full bg-[#2D9CDB]">
-                  {getInitials(profile?.full_name)}
-                </div>
+              {/* HOME */}
+              {activeModule === "home" && (
+                <>
+                  <h2 className="px-2 font-semibold text-[15px] text-[#172033]">
+                    Home
+                  </h2>
+
+                  <nav className="mt-4 space-y-1">
+                    {menus.map((item) => {
+                      const active = isMenuActive(item);
+                      const actualHasSubmenu = item.subMenus?.length > 0;
+
+                      const hideSubmenu = MENU_NO_DROPDOWN.includes(item.name);
+
+                      const hasSubmenu = actualHasSubmenu && !hideSubmenu;
+
+                      const expanded = !!expandedMenus[item.id];
+
+                      return (
+                        <React.Fragment key={item.id}>
+                          {/* PARENT MENU */}
+                          <button
+                            type="button"
+                            onClick={() => handleMenuClick(item)}
+                            className={`
+                            flex
+                            w-full
+                            items-center
+                            justify-between
+                            gap-2
+                            rounded-lg
+                            px-2.5
+                            py-2
+                            text-left
+                            transition
+
+                            ${
+                              active
+                                ? "text-brand-primary"
+                                : "text-[#666] hover:bg-white/50 hover:text-[#222]"
+                            }
+                          `}
+                          >
+                            <div className="flex items-center flex-1 min-w-0 gap-3">
+                              {/* ICON */}
+                              {item.icon ? (
+                                <img
+                                  src={item.icon}
+                                  alt={item.name}
+                                  className={`
+                                  h-[18px]
+                                  w-[18px]
+                                  shrink-0
+                                  object-contain
+
+                                  ${active ? "" : "grayscale"}
+                                `}
+                                  onError={(event) => {
+                                    event.currentTarget.style.display = "none";
+                                  }}
+                                />
+                              ) : (
+                                <div
+                                  className={`
+                                  h-[16px]
+                                  w-[16px]
+                                  shrink-0
+                                  rounded-sm
+
+                                  ${active ? "bg-brand-primary" : "bg-[#777]"}
+                                `}
+                                />
+                              )}
+
+                              <span
+                                className={`
+                                truncate
+                                text-xs
+
+                                ${active ? "font-medium" : "font-normal"}
+                              `}
+                              >
+                                {item.name}
+                              </span>
+                            </div>
+
+                            {hasSubmenu && (
+                              <ChevronDown
+                                size={14}
+                                className={`
+                                shrink-0
+                                transition-transform
+                                duration-200
+
+                                ${expanded ? "rotate-180" : ""}
+                              `}
+                              />
+                            )}
+                          </button>
+
+                          {/* SUBMENU */}
+                          {hasSubmenu && expanded && (
+                            <div className="mt-1 space-y-1 ml-7">
+                              {item.subMenus.map((sub) => {
+                                const subActive =
+                                  sub.path && pathname === sub.path;
+
+                                return (
+                                  <button
+                                    type="button"
+                                    key={sub.id}
+                                    onClick={() => handleSubMenuClick(sub)}
+                                    className={`
+                                    block
+                                    w-full
+                                    rounded-md
+                                    px-2
+                                    py-1.5
+                                    text-left
+                                    text-[11px]
+                                    transition
+
+                                    ${
+                                      subActive
+                                        ? "font-semibold text-brand-primary"
+                                        : "text-gray-500 hover:bg-white/40 hover:text-brand-primary"
+                                    }
+                                  `}
+                                  >
+                                    {sub.name}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </nav>
+                </>
               )}
 
-              {/* <button
-              className="px-3 py-1 mt-3 text-xs font-semibold text-white rounded-full bg-gradient-to-r from-[#2D9CDB] to-[#0F4C81]"
-              onClick={() => alert("Subscribe feature coming soon!")}
-            >
-              +
-            </button> */}
+              {/* COMMUNICATION */}
+              {activeModule === "communication" && (
+                <>
+                  <h2 className="px-2 font-semibold text-[15px] text-[#172033]">
+                    Communication
+                  </h2>
+
+                  <div className="px-2 mt-4">
+                    <p className="text-xs leading-5 text-gray-500">
+                      Menu communication belum tersedia dari API.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {/* WORK */}
+              {activeModule === "work" && (
+                <>
+                  <h2 className="px-2 font-semibold text-[15px] text-[#172033]">
+                    Work
+                  </h2>
+
+                  <div className="px-2 mt-4">
+                    <p className="text-xs leading-5 text-gray-500">
+                      Menu work belum tersedia dari API.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </aside>
     </>

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import logo from "../../assets/images/logo.png";
+import logo from "../../assets/images/logo-2.png";
 import { useNavigate } from "react-router-dom";
 import { ApiRequest } from "../../services/apiRequest";
+import Button from "../../components/common/button";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,10 +11,12 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e?.preventDefault();
+
     setLoading(true);
     setError("");
 
@@ -27,34 +30,37 @@ const Login = () => {
       const res = await ApiRequest({
         url: "/login",
         method: "POST",
-        data: { identity, password },
+        data: {
+          identity,
+          password,
+        },
       });
 
-      // Backend kamu MUNGKIN tidak mengirim status lowercase
       const status = res?.status?.toString().toLowerCase();
 
       if (status === "success") {
         const { token } = res.data;
 
-        // 🔥 SIMPAN TOKEN DULU (dipakai refresh-menu)
         localStorage.clear();
         localStorage.setItem("token", token);
 
-        // 🔥 AMBIL DATA TERBARU + PERMISSION
         const refresh = await ApiRequest({
           url: "/users/refresh-menu",
           method: "GET",
         });
 
-        // 🔥 SIMPAN DATA DARI REFRESH-MENU
         localStorage.setItem("userData", JSON.stringify(refresh.data.user));
 
         navigate("/overview");
       } else {
         let msg =
           res.message?.toLowerCase() || "Terjadi kesalahan pada server.";
-        if (msg.includes("user not found")) msg = "Pengguna tidak ditemukan.";
-        else if (msg.includes("invalid password")) msg = "Kata sandi salah.";
+
+        if (msg.includes("user not found")) {
+          msg = "Pengguna tidak ditemukan.";
+        } else if (msg.includes("invalid password")) {
+          msg = "Kata sandi salah.";
+        }
 
         setError(msg);
       }
@@ -67,9 +73,13 @@ const Login = () => {
         msg = err.message?.toLowerCase() || "";
       }
 
-      if (msg.includes("user not found")) msg = "Pengguna tidak ditemukan.";
-      else if (msg.includes("invalid")) msg = "Kata sandi salah.";
-      else msg = "Terjadi kesalahan pada server.";
+      if (msg.includes("user not found")) {
+        msg = "Pengguna tidak ditemukan.";
+      } else if (msg.includes("invalid")) {
+        msg = "Kata sandi salah.";
+      } else {
+        msg = "Terjadi kesalahan pada server.";
+      }
 
       setError(msg);
     } finally {
@@ -78,79 +88,89 @@ const Login = () => {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen px-4 bg-white sm:px-6 lg:px-8">
-      <div className="flex flex-col items-center w-full">
-        <img
-          src={logo}
-          alt="Marketing Labs"
-          className="w-40 mb-8 select-none sm:w-44 md:w-48 lg:w-52 sm:mb-10"
-        />
+    <div className="relative flex items-center justify-center min-h-screen px-4 bg-white">
+      <div className="w-full max-w-lg">
+        {/* LOGO */}
+        <div className="mb-10 text-center">
+          <img
+            src={logo}
+            alt="BOLDe Hub"
+            className="object-contain w-16 mx-auto"
+          />
+        </div>
 
-        <div className="w-full max-w-sm space-y-4 sm:max-w-md lg:max-w-lg sm:space-y-5">
+        {/* FORM */}
+        <form onSubmit={handleLogin} className="space-y-4">
           {error && (
-            <p className="-mb-2 text-sm font-medium text-left text-red-600">
+            <div className="px-4 py-3 text-sm rounded-xl bg-red-50 text-status-danger">
               {error}
-            </p>
+            </div>
           )}
 
-          {/* Email */}
-          <div>
-            <input
-              type="email"
-              value={identity}
-              onChange={(e) => setIdentity(e.target.value)}
-              placeholder="E-Mail"
-              className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-primary"
-            />
-          </div>
+          {/* EMAIL */}
+          <input
+            type="text"
+            value={identity}
+            onChange={(e) => setIdentity(e.target.value)}
+            placeholder="E-Mail"
+            className="w-full px-4 py-3 text-base transition bg-white border outline-none rounded-2xl border-surface-border text-text-primary placeholder:text-text-light focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10"
+          />
 
-          {/* Password */}
+          {/* PASSWORD */}
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-primary"
+              className="w-full px-4 py-3 pr-12 text-base transition bg-white border outline-none rounded-2xl border-surface-border text-text-primary placeholder:text-text-light focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10"
             />
+
             <button
               type="button"
-              className="absolute right-4 top-1/2 -translate-y-[45%] text-text-secondary hover:text-text-primary"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute -translate-y-1/2 right-4 top-1/2 text-text-secondary"
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
 
-          <div className="flex items-center justify-between gap-4 mt-4">
+          {/* ACTION */}
+          <div className="flex flex-col gap-4 pt-1 sm:flex-row sm:items-center sm:justify-between">
             <button
-              className="text-sm text-brand-secondary hover:underline"
+              type="button"
               onClick={() => navigate("/reset-password")}
+              className="text-sm font-medium text-left text-brand-primary hover:underline"
             >
               Lupa kata sandi
             </button>
 
             <div className="flex items-center gap-3">
-              <button
-                className="px-5 py-2 font-medium text-gray-600 transition border border-gray-300 rounded-2xl hover:bg-gray-50"
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
                 onClick={() => navigate("/signup")}
               >
                 Sign Up
-              </button>
-              <button
-                className="px-6 py-2 font-medium text-white transition shadow-md bg-gradient-to-r from-brand-primary to-brand-secondary rounded-2xl hover:shadow-lg"
-                onClick={handleLogin}
-                disabled={loading}
+              </Button>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                loading={loading}
               >
                 Login
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </form>
       </div>
 
-      <p className="absolute text-sm text-gray-400 bottom-6">
-        Version Update 1.0
+      {/* VERSION */}
+      <p className="absolute text-sm bottom-7 text-text-light">
+        Version Update 2.0
       </p>
     </div>
   );

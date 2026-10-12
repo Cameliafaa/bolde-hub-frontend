@@ -1,102 +1,121 @@
 import { useState } from "react";
-import { X } from "lucide-react";
-import logo from "../../assets/images/logo.png"; 
+import { ArrowLeft, CheckCircle2, Mail, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import logo from "../../assets/images/logo-2.png";
+import Button from "../../components/common/button";
 
 const ResetPassword = () => {
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [showModal, setShowModal] = useState(false);
+  const navigate = useNavigate();
 
-    const handleResetPassword = () => {
-        setLoading(true);
-        setError("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showModal, setShowModal] = useState(false);
 
-        setTimeout(() => {
-            setLoading(false);
-            setShowModal(true);
-        }, 1200);
-    };
+  const handleResetPassword = () => {
+    setError("");
 
-    const handleBackToLogin = () => {
-        setShowModal(false);
-        window.location.href = "/";
-    };
+    if (!email.trim()) {
+      setError("Email wajib diisi.");
+      return;
+    }
 
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-white relative">
-            {/* Logo */}
-            <img
-                src={logo}
-                alt="Marketing Labs"
-                className="w-52 mb-10 select-none"
-            />
+    setLoading(true);
 
-            {/* Login Box */}
-            <div className="w-full max-w-md space-y-5">
-                {error && (
-                    <p className="text-red-600 text-sm font-medium text-left -mb-2">
-                        {error}
-                    </p>
-                )}
-                {/* Email Input */}
-                <div>
-                    <input
-                        type="email"
-                        // value={identity}
-                        // onChange={(e) => setIdentity(e.target.value)}
-                        placeholder="E-Mail"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    />
-                </div>
+    // Dummy sementara sampai API reset password tersedia
+    setTimeout(() => {
+      setLoading(false);
+      setShowModal(true);
+    }, 1000);
+  };
 
-                {/* Buttons */}
-                <div className="flex items-center justify-end gap-3">
-                    <button
-                        className="bg-gradient-to-r from-[#2D9CDB] to-[#0F4C81] text-white px-6 py-2 rounded-2xl shadow-md hover:shadow-lg transition font-medium"
-                        onClick={handleResetPassword}
-                        disabled={loading}
-                    >
-                        Lupa Password
-                    </button>
-                </div>
+  const handleBackToLogin = () => {
+    setShowModal(false);
+    navigate("/");
+  };
+
+  return (
+    <div className="relative flex items-center justify-center min-h-screen px-4 bg-white">
+      <div className="w-full max-w-lg">
+        {/* LOGO */}
+        <div className="mb-10 text-center">
+          <img
+            src={logo}
+            alt="BOLDe Hub"
+            className="object-contain w-16 mx-auto"
+          />
+        </div>
+
+        {/* FORM */}
+        <div className="space-y-4">
+          {error && (
+            <div className="px-4 py-3 text-sm rounded-xl bg-red-50 text-status-danger">
+              {error}
             </div>
+          )}
 
-            {/* Footer */}
-            <p className="absolute bottom-6 text-sm text-gray-400">
-                Version Update 1.0
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="E-Mail"
+            className="w-full px-4 py-3 text-base transition bg-white border outline-none rounded-2xl border-surface-border text-text-primary placeholder:text-text-light focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10"
+          />
+
+          <div className="flex items-center justify-end pt-1">
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              loading={loading}
+              onClick={handleResetPassword}
+            >
+              Lupa Password
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* VERSION */}
+      <p className="absolute text-sm bottom-7 text-text-light">
+        Version Update 2.0
+      </p>
+
+      {/* MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-overlay">
+          <div className="relative w-full max-w-sm p-6 text-center bg-white shadow-xl rounded-2xl">
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="absolute transition right-4 top-4 text-text-light hover:text-text-primary"
+            >
+              <X size={20} />
+            </button>
+
+            <CheckCircle2 size={52} className="mx-auto text-status-success" />
+
+            <h2 className="mt-4 text-lg font-semibold text-text-primary">
+              Email berhasil dikirim
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-text-secondary">
+              Silakan cek kotak masuk atau folder spam untuk melanjutkan proses
+              reset password.
             </p>
 
-            {/* Pop Up Modal */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 relative text-center">
-                        <button
-                        onClick={() => setShowModal(false)}
-                        className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-                        >
-                            <X size={22} />
-                        </button>
-
-                        <h2 className="text-lg font-semibold text-[#0F4C81] mb-3">
-                            Password Terkirim
-                        </h2>
-                        <p className="text-sm text-gray-600 mb-6">
-                            Password baru sudah dikirim melalui email.
-                            <br />
-                            Silahkan cek kotak masuk atau folder spam Anda.
-                        </p>
-
-                        <button
-                        onClick={handleBackToLogin}
-                        className="bg-gradient-to-r from-[#2D9CDB] to-[#0F4C81] text-white px-5 py-2 rounded-2xl shadow-md hover:shadow-lg transition font-medium w-full"
-                        >
-                            Back to Login
-                        </button>
-                    </div>
-                </div>
-            )}
+            <button
+              type="button"
+              onClick={handleBackToLogin}
+              className="w-full px-5 mt-6 text-sm font-semibold text-white transition py-2.5 rounded-xl bg-gradient-to-r from-brand-gradientFrom via-brand-gradientVia to-brand-gradientTo hover:brightness-95"
+            >
+              Kembali ke Login
+            </button>
+          </div>
         </div>
-    );
+      )}
+    </div>
+  );
 };
 
 export default ResetPassword;
