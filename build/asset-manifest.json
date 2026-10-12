@@ -1,0 +1,30 @@
+{
+  "files": {
+    "main.css": "/static/css/main.bc3d0c9e.css",
+    "main.js": "/static/js/main.6ae2ae91.js",
+    "static/js/977.7b4b696d.chunk.js": "/static/js/977.7b4b696d.chunk.js",
+    "static/js/455.8cd2e859.chunk.js": "/static/js/455.8cd2e859.chunk.js",
+    "static/media/bolde-compro.pdf": "/static/media/bolde-compro.b6efdb7716c89776e69a.pdf",
+    "static/media/certificate.png": "/static/media/certificate.987c0065e3d9ab53471b.png",
+    "static/media/banner.png": "/static/media/banner.e60b395ebc791e181e77.png",
+    "static/media/compro.png": "/static/media/compro.104260ecb4e14bfd7d30.png",
+    "static/media/Header.png": "/static/media/Header.67dddfc8e7fd4db6e20a.png",
+    "static/media/logo.png": "/static/media/logo.383b5d4eb5b80fefe12b.png",
+    "static/media/haryono.png": "/static/media/haryono.1865b9d0ae8e66b89612.png",
+    "static/media/logo-only.png": "/static/media/logo-only.91c4bda38f2c4d11c9bc.png",
+    "static/media/1.png": "/static/media/1.ae20762bcd4e8f3ce5c6.png",
+    "static/media/rico.png": "/static/media/rico.fb09aac86048d9c4b70b.png",
+    "static/media/airlangga.png": "/static/media/airlangga.2cd7cd5628b445d82d77.png",
+    "static/media/wilman.png": "/static/media/wilman.826467a036a1a0d5ae6d.png",
+    "static/media/announcement.png": "/static/media/announcement.5b08637c12d7e92e6cba.png",
+    "index.html": "/index.html",
+    "main.bc3d0c9e.css.map": "/static/css/main.bc3d0c9e.css.map",
+    "main.6ae2ae91.js.map": "/static/js/main.6ae2ae91.js.map",
+    "977.7b4b696d.chunk.js.map": "/static/js/977.7b4b696d.chunk.js.map",
+    "455.8cd2e859.chunk.js.map": "/static/js/455.8cd2e859.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.bc3d0c9e.css",
+    "static/js/main.6ae2ae91.js"
+  ]
+}

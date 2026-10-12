@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "./styles/animation.css";
+@import "./styles/override.css";
+
+html, body {
+  overflow-x: hidden;
+}
+
+.react-spreadsheet .Spreadsheet__cell {
+  padding: 4px !important;
+  vertical-align: middle;
+}
+
+.react-spreadsheet .Spreadsheet__cell.font-bold {
+  font-weight: bold !important;
+}
+.react-spreadsheet .Spreadsheet__cell.italic {
+  font-style: italic !important;
+}
+.react-spreadsheet .Spreadsheet__cell.underline {
+  text-decoration: underline !important;
+}
+
+/* Custom font size classes for spreadsheet */
+.text-size-12 {
+  font-size: 12px !important;
+}
+.text-size-14 {
+  font-size: 14px !important;
+}
+.text-size-16 {
+  font-size: 16px !important;
+}
+.text-size-18 {
+  font-size: 18px !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ===== Tiptap / ProseMirror FULL RESET ===== */
+.prose-mirror-reset .ProseMirror {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Remove focus styles */
+.prose-mirror-reset .ProseMirror:focus,
+.prose-mirror-reset .ProseMirror:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove weird blue highlight on empty line */
+.prose-mirror-reset .ProseMirror p {
+  margin: 0;
+}
+
+/* SWIPER NAVIGATION BUTTON */
+.swiper-button-prev,
+.swiper-button-next {
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  color: #002D62;
+}
+
+/* Icon arrow color */
+.swiper-button-prev::after,
+.swiper-button-next::after {
+  font-size: 16px;
+  font-weight: bold;
+  color: #002D62;
+}
+
+/* Hover effect */
+.swiper-button-prev:hover,
+.swiper-button-next:hover {
+  opacity: 0.85;
+}
+
+.rdrCalendarWrapper {
+  font-family: inherit;
+}
+
+.rdrMonthAndYearWrapper {
+  padding: 10px 16px;
+}
+
+.rdrDay {
+  height: 38px;
+}
+
+.rdrSelected,
+.rdrInRange,
+.rdrStartEdge,
+.rdrEndEdge {
+  background: #002D62 !important;
+}
+
+.rdrCalendarWrapper {
+  max-width: 95vw;
+}
